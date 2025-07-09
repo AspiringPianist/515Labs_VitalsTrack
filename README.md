@@ -54,7 +54,7 @@ firmware/
 
 Two Python scripts are provided for data logging and visualization:
 
-(Located in `firmware./`)
+(Located in `firmware/`)
 
 1. `record_hr_spo2.py` - For heart rate and SpO2 mode:
    - Logs heart rate, SpO2, and accelerometer data
