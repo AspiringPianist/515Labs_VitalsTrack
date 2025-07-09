@@ -39,7 +39,7 @@
 firmware/
 ├── src/
 │   └── main.cpp          # Main application code
-├── include/              # Header files
+├── include/
 ├── lib/                  # Project-specific libraries
 └── platformio.ini        # PlatformIO configuration
 ```
