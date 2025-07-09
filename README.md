@@ -33,13 +33,13 @@
 6. Select the correct COM port
 7. Click Upload button
 
-## Project Structure
+## PlatformIO Project Structure
 
 ```
 firmware/
 ├── src/
 │   └── main.cpp          # Main application code
-├── include/              # Header files
+├── include/
 ├── lib/                  # Project-specific libraries
 └── platformio.ini        # PlatformIO configuration
 ```
