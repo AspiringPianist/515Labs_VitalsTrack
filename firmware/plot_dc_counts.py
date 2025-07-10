@@ -70,11 +70,7 @@ red_spline = UnivariateSpline(unique_d, red_avg, s=smoothing_factor, k=3)
 ir_smooth = ir_spline(x_smooth)
 red_smooth = red_spline(x_smooth)
 
-# === Plot ===
-plt.figure(figsize=(12, 8))
-
 # Main plot
-plt.subplot(2, 1, 1)
 plt.plot(x_smooth, ir_smooth, label='IR (Smoothed)', color='blue', linewidth=2)
 plt.plot(x_smooth, red_smooth, label='Red (Smoothed)', color='red', linewidth=2)
 plt.scatter(unique_d, ir_avg, color='navy', s=50, alpha=0.7, zorder=5, label='IR Data Points')
@@ -86,20 +82,20 @@ plt.grid(True, alpha=0.3)
 plt.legend()
 
 # Residuals plot
-plt.subplot(2, 1, 2)
-ir_residuals = np.array(ir_avg) - ir_spline(unique_d)
-red_residuals = np.array(red_avg) - red_spline(unique_d)
+# plt.subplot(2, 1, 2)
+# ir_residuals = np.array(ir_avg) - ir_spline(unique_d)
+# red_residuals = np.array(red_avg) - red_spline(unique_d)
 
-plt.scatter(unique_d, ir_residuals, color='blue', s=50, alpha=0.7, label='IR Residuals')
-plt.scatter(unique_d, red_residuals, color='red', s=50, alpha=0.7, label='Red Residuals')
-plt.axhline(y=0, color='black', linestyle='--', alpha=0.5)
-plt.title("Interpolation Residuals (Data - Fit)")
-plt.xlabel("Distance (mm)")
-plt.ylabel("Residual")
-plt.grid(True, alpha=0.3)
-plt.legend()
+# plt.scatter(unique_d, ir_residuals, color='blue', s=50, alpha=0.7, label='IR Residuals')
+# plt.scatter(unique_d, red_residuals, color='red', s=50, alpha=0.7, label='Red Residuals')
+# plt.axhline(y=0, color='black', linestyle='--', alpha=0.5)
+# plt.title("Interpolation Residuals (Data - Fit)")
+# plt.xlabel("Distance (mm)")
+# plt.ylabel("Residual")
+# plt.grid(True, alpha=0.3)
+# plt.legend()
 
-plt.tight_layout()
+# plt.tight_layout()
 plt.show()
 
 # Print some statistics
