@@ -1,155 +1,202 @@
-// Distance testing version of MAX30100 BLE code
 #include <Arduino.h>
-#include <Wire.h>
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <BLE2902.h>
-#include "MAX30100.h"
 
-#define REPORTING_PERIOD_MS 100
-#define SAMPLES_PER_BATCH 10
+// Conditional compilation flag - change this to switch between modes
+#define USE_TEMPERATURE_MODE 0  // Set to 1 for Temperature, 0 for HR_SpO2
 
-MAX30100 sensor;
-uint32_t tsLastReport = 0;
+#if USE_TEMPERATURE_MODE
+  // Temperature Mode
+  #include <Wire.h>
+  #include <BLEDevice.h>
+  #include <BLEServer.h>
+  #include <BLEUtils.h>
+  #include <BLE2902.h>
+  #include "MAX30100.h"
 
-// BLE variables
-BLEServer* bleServer;
-BLEService* bleService;
-BLECharacteristic* rawDataChar;
-BLECharacteristic* controlChar;
+  #define REPORTING_PERIOD_MS 2000
+  #define TEMP_SAMPLING_PERIOD_MS 1000
 
-// UUIDs for quantum efficiency testing
-static const BLEUUID qeServiceUUID("12345678-1234-5678-1234-56789abcdef0");
-static const BLEUUID rawDataCharUUID("abcdefab-1234-5678-1234-56789abcdef1");
-static const BLEUUID controlCharUUID("abcdefab-1234-5678-1234-56789abcdef2");
+  MAX30100 sensor;
+  uint32_t tsLastReport = 0;
+  uint32_t tsLastTempSample = 0;
+  bool tempSamplingStarted = false;
 
-// Data collection variables
-uint32_t irSum = 0;
-uint32_t redSum = 0;
-uint16_t sampleCount = 0;
-bool collectingData = false;
-String currentLED = "none";
-int currentDistance = 0; // NEW
+  BLEServer* bleServer;
+  BLEService* bleService;
+  BLECharacteristic* temperatureChar;
 
-class ControlCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic* pCharacteristic) {
-        String value = pCharacteristic->getValue().c_str();
-        
-        if (value.startsWith("START:")) {
-            int colonIndex = value.indexOf(':', 6);
-            if (colonIndex > 0) {
-                currentLED = value.substring(6, colonIndex);
-                currentDistance = value.substring(colonIndex + 1).toInt();
-            } else {
-                currentLED = value.substring(6);
-                currentDistance = 0;
-            }
-            collectingData = true;
-            sampleCount = 0;
-            irSum = 0;
-            redSum = 0;
-            Serial.println("Started collecting for " + currentLED + " at " + String(currentDistance) + "mm");
-        } else if (value == "STOP") {
-            collectingData = false;
-            Serial.println("Stopped data collection");
-        } else if (value == "RESET") {
-            sensor.resetFifo();
-            Serial.println("FIFO reset");
-        }
-    }
-};
+  static const BLEUUID tempServiceUUID("12345678-1234-5678-1234-56789abcdef0");
+  static const BLEUUID tempCharUUID("abcdefab-1234-5678-1234-56789abcdef1");
 
-void setup_sensor() {
+  void setup_sensor() {
     Serial.print("Initializing MAX30100 sensor... ");
     if (!sensor.begin()) {
-        Serial.println("FAILED");
-        while (1);
+      Serial.println("FAILED");
+      while (1);
     } else {
-        Serial.println("SUCCESS");
+      Serial.println("SUCCESS");
     }
-    sensor.setMode(MAX30100_MODE_SPO2_HR);
-    sensor.setLedsCurrent(MAX30100_LED_CURR_50MA, MAX30100_LED_CURR_50MA);
-    sensor.setHighresModeEnabled(true);
-    Serial.println("Sensor configured for distance testing");
-}
+    sensor.setLedsCurrent(MAX30100_LED_CURR_7_6MA, MAX30100_LED_CURR_50MA);
+  }
 
-void setup_ble() {
-    BLEDevice::init("ESP32_Distance_Test");
+  void setup_ble() {
+    BLEDevice::init("ESP32_Temperature");
     bleServer = BLEDevice::createServer();
-    bleService = bleServer->createService(qeServiceUUID);
-
-    rawDataChar = bleService->createCharacteristic(
-        rawDataCharUUID,
-        BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ
+    bleService = bleServer->createService(tempServiceUUID);
+    temperatureChar = bleService->createCharacteristic(
+      tempCharUUID,
+      BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ
     );
-    rawDataChar->addDescriptor(new BLE2902());
-
-    controlChar = bleService->createCharacteristic(
-        controlCharUUID,
-        BLECharacteristic::PROPERTY_WRITE
-    );
-    controlChar->setCallbacks(new ControlCallbacks());
-
+    temperatureChar->addDescriptor(new BLE2902());
     bleService->start();
 
     BLEAdvertising* bleAdv = BLEDevice::getAdvertising();
-    bleAdv->addServiceUUID(qeServiceUUID);
+    bleAdv->addServiceUUID(tempServiceUUID);
     bleAdv->setScanResponse(true);
+    bleAdv->setMinPreferred(0x06);
+    bleAdv->setMinPreferred(0x12);
     BLEDevice::startAdvertising();
-    Serial.println("BLE advertising started");
-}
 
-void sendRawData(uint16_t ir, uint16_t red) {
-    char buf[160];
-    snprintf(buf, sizeof(buf),
-        "{\"ir\":%u,\"red\":%u,\"led\":\"%s\",\"samples\":%u,\"distance_mm\":%d,\"collecting\":%s}",
-        ir, red, currentLED.c_str(), sampleCount, currentDistance, collectingData ? "true" : "false"
-    );
-    rawDataChar->setValue((uint8_t*)buf, strlen(buf));
-    rawDataChar->notify();
-}
+    Serial.println("BLE advertising started.");
+  }
 
-void sendAverageData() {
-    if (sampleCount > 0) {
-        float avgIR = (float)irSum / sampleCount;
-        float avgRed = (float)redSum / sampleCount;
-        char buf[160];
-        snprintf(buf, sizeof(buf),
-            "{\"type\":\"average\",\"led\":\"%s\",\"distance_mm\":%d,\"avg_ir\":%.2f,\"avg_red\":%.2f,\"samples\":%u}",
-            currentLED.c_str(), currentDistance, avgIR, avgRed, sampleCount
-        );
-        rawDataChar->setValue((uint8_t*)buf, strlen(buf));
-        rawDataChar->notify();
-        Serial.printf("Average (%s @ %dmm): IR=%.2f, Red=%.2f (samples=%u)\n", currentLED.c_str(), currentDistance, avgIR, avgRed, sampleCount);
+  void updateTemperature(float temperature) {
+    char buf[64];
+    snprintf(buf, sizeof(buf), "{\"temperature\":%.3f}", temperature);
+    temperatureChar->setValue((uint8_t*)buf, strlen(buf));
+    temperatureChar->notify();
+    Serial.printf("Temperature: %.3f°C\n", temperature);
+  }
+
+#else
+  // HR_SpO2 Mode
+  #include <Wire.h>
+  #include <BLEDevice.h>
+  #include <BLEServer.h>
+  #include <BLEUtils.h>
+  #include <BLE2902.h>
+  #include "ADXL335.h"
+  #include "MAX30100_PulseOximeter.h"
+
+  #define REPORTING_PERIOD_MS 500
+
+  PulseOximeter pox;
+  ADXL335 accel;
+  float ax = 0.0, ay = 0.0, az = 0.0;
+  uint32_t tsLastReport = 0;
+
+  BLEServer* bleServer;
+  BLEService* bleService;
+  BLECharacteristic* customSensorChar;
+
+  static const BLEUUID customServiceUUID("12345678-1234-5678-1234-56789abcdef0");
+  static const BLEUUID customCharUUID("abcdefab-1234-5678-1234-56789abcdef1");
+
+  void setup_oximeter() {
+    Serial.print("Initializing pulse oximeter... ");
+    if (!pox.begin()) {
+      Serial.println("FAILED");
+      while (1);
+    } else {
+      Serial.println("SUCCESS");
     }
-}
+    pox.setIRLedCurrent(MAX30100_LED_CURR_7_6MA);
+  }
+
+  void setup_accel() {
+    accel.begin();
+  }
+
+  void setup_ble() {
+    BLEDevice::init("ESP32_Sensor");
+    bleServer = BLEDevice::createServer();
+    bleService = bleServer->createService(customServiceUUID);
+    customSensorChar = bleService->createCharacteristic(
+      customCharUUID,
+      BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ
+    );
+    customSensorChar->addDescriptor(new BLE2902());
+    bleService->start();
+
+    BLEAdvertising* bleAdv = BLEDevice::getAdvertising();
+    bleAdv->addServiceUUID(customServiceUUID);
+    bleAdv->setScanResponse(true);
+    bleAdv->setMinPreferred(0x06);
+    bleAdv->setMinPreferred(0x12);
+    BLEDevice::startAdvertising();
+
+    Serial.println("BLE advertising started.");
+  }
+
+  void update(float hrf, float spo2f, float ax, float ay, float az) {
+    char buf[128];
+    snprintf(buf, sizeof(buf),
+      "{\"hr\":%.0f,\"spo2\":%.0f,\"ax\":%.2f,\"ay\":%.2f,\"az\":%.2f}",
+      hrf, spo2f, ax, ay, az
+    );
+    customSensorChar->setValue((uint8_t*)buf, strlen(buf));
+    customSensorChar->notify();
+    Serial.println(buf);
+  }
+
+#endif
 
 void setup() {
-    Serial.begin(115200);
-    Wire.begin();
-    Wire.setClock(400000);
-    setup_ble();
-    setup_sensor();
-    Serial.println("=== Distance Test Mode ===");
+  Serial.begin(115200);
+  Wire.begin();
+  
+#if USE_TEMPERATURE_MODE
+  Wire.setClock(400000);
+  setup_ble();
+  setup_sensor();
+  Serial.println("System ready - Temperature monitoring started");
+#else
+  Wire.setClock(100000);
+  setup_ble();
+  setup_oximeter();
+  setup_accel();
+  Serial.println("System ready - HR/SpO2 monitoring started");
+#endif
 }
 
 void loop() {
-    sensor.update();
-    uint16_t ir, red;
-    if (sensor.getRawValues(&ir, &red)) {
-        if (collectingData) {
-            irSum += ir;
-            redSum += red;
-            sampleCount++;
-            if (sampleCount % SAMPLES_PER_BATCH == 0) {
-                sendAverageData();
-            }
-        }
-        if (millis() - tsLastReport > REPORTING_PERIOD_MS) {
-            sendRawData(ir, red);
-            tsLastReport = millis();
-        }
+#if USE_TEMPERATURE_MODE
+  // Temperature Mode Loop
+  sensor.update();
+  
+  if (millis() - tsLastTempSample > TEMP_SAMPLING_PERIOD_MS) {
+    if (!tempSamplingStarted) {
+      sensor.startTemperatureSampling();
+      tempSamplingStarted = true;
+      tsLastTempSample = millis();
     }
-    delay(10);
+  }
+  
+  if (tempSamplingStarted && sensor.isTemperatureReady()) {
+    float temperature = sensor.retrieveTemperature();
+    
+    if (millis() - tsLastReport > REPORTING_PERIOD_MS) {
+      updateTemperature(temperature);
+      tsLastReport = millis();
+    }
+    
+    tempSamplingStarted = false;
+  }
+  
+  delay(10);
+
+#else
+  // HR_SpO2 Mode Loop
+  pox.update();
+
+  if (millis() - tsLastReport > REPORTING_PERIOD_MS) {
+    float hr = pox.getHeartRate();
+    float spo2 = pox.getSpO2();
+    accel.getAcceleration(&ax, &ay, &az);
+
+    Serial.printf("HR: %.1f | SpO2: %.1f | Accel: {%.2f, %.2f, %.2f}\n", hr, spo2, ax, ay, az);
+
+    update(hr, spo2, ax, ay, az);
+    tsLastReport = millis();
+  }
+#endif
 }
