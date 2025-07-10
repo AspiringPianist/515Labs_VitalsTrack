@@ -1,0 +1,5 @@
+LED,Wavelength_nm,Relative_QE_vs_IR,Relative_QE_vs_Red
+blue,470,inf,0.9959595280294717
+green,525,inf,2.0440901867109633
+red,660,inf,1.0
+ir,940,,0.0
