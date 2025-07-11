@@ -1,6 +1,3 @@
-Here's an accurate and detailed `pin_mapping.txt` for each of the provided schematics.
-
-```
 # Pin Mapping for 515 LABS Schematics
 # Date: 2025-07-10
 
@@ -199,4 +196,3 @@ Here's an accurate and detailed `pin_mapping.txt` for each of the provided schem
 # 5: IRD                              | Not Connected (N/C)
 # 6: RD                               | Not Connected (N/C)
 # 7: GND                              | Nodemcu 32S (U4) GND
-```
