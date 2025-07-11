@@ -54,18 +54,18 @@
 
 // accleration of X-AXIS is 0g, the voltage of X-AXIS is 1.22v
 #ifndef ZERO_X
-#define ZERO_X 1.45
+#define ZERO_X 1.44
 #endif
 #ifndef ZERO_Y
-#define ZERO_Y 1.48  //
+#define ZERO_Y 1.44  //
 #endif
 #ifndef ZERO_Z
-#define ZERO_Z 1.52  //
+#define ZERO_Z 1.51  //
 #endif
 
 // sensitivity of X/Y/Z axis is 0.25v/g
 #ifndef SENSITIVITY
-#define SENSITIVITY 0.28
+#define SENSITIVITY 0.29
 #endif
 
 class ADXL335 {

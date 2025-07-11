@@ -1,0 +1,119 @@
+Enter LED type (red/ir): ir
+Enter distance (mm): 3000
+Starting for ir at 3000mm
+📊 ir @ 3000mm => IR: 9.80, Red: 1.10
+📊 ir @ 3000mm => IR: 10.70, Red: 1.05
+📊 ir @ 3000mm => IR: 11.27, Red: 0.90
+📊 ir @ 3000mm => IR: 11.25, Red: 0.70
+📊 ir @ 3000mm => IR: 10.98, Red: 0.76
+📊 ir @ 3000mm => IR: 10.33, Red: 0.63
+📊 ir @ 3000mm => IR: 9.79, Red: 0.57
+📊 ir @ 3000mm => IR: 9.07, Red: 0.62
+📊 ir @ 3000mm => IR: 8.26, Red: 0.59
+📊 ir @ 3000mm => IR: 7.70, Red: 0.54
+📊 ir @ 3000mm => IR: 7.22, Red: 0.68
+📊 ir @ 3000mm => IR: 6.82, Red: 0.99
+📊 ir @ 3000mm => IR: 6.51, Red: 1.52
+📊 ir @ 3000mm => IR: 6.22, Red: 1.96
+📊 ir @ 3000mm => IR: 5.94, Red: 2.41
+📊 ir @ 3000mm => IR: 5.65, Red: 2.62
+📊 ir @ 3000mm => IR: 5.69, Red: 2.91
+📊 ir @ 3000mm => IR: 5.99, Red: 3.00
+📊 ir @ 3000mm => IR: 6.38, Red: 2.88
+📊 ir @ 3000mm => IR: 6.66, Red: 2.76
+📊 ir @ 3000mm => IR: 6.97, Red: 2.64
+📊 ir @ 3000mm => IR: 7.20, Red: 2.53
+📊 ir @ 3000mm => IR: 7.35, Red: 2.42
+📊 ir @ 3000mm => IR: 7.35, Red: 2.32
+📊 ir @ 3000mm => IR: 7.24, Red: 2.26
+📊 ir @ 3000mm => IR: 7.07, Red: 2.17
+
+Enter LED type (red/ir): blue
+Enter distance (mm): 1500
+Starting for blue at 1500mm
+📊 blue @ 1500mm => IR: 5.50, Red: 1.90
+📊 blue @ 1500mm => IR: 5.25, Red: 1.65
+📊 blue @ 1500mm => IR: 5.87, Red: 2.10
+📊 blue @ 1500mm => IR: 5.82, Red: 2.17
+📊 blue @ 1500mm => IR: 5.96, Red: 2.04
+📊 blue @ 1500mm => IR: 6.05, Red: 1.93
+📊 blue @ 1500mm => IR: 6.06, Red: 1.84
+📊 blue @ 1500mm => IR: 6.18, Red: 1.77
+📊 blue @ 1500mm => IR: 6.20, Red: 1.74
+📊 blue @ 1500mm => IR: 6.22, Red: 1.78
+📊 blue @ 1500mm => IR: 6.20, Red: 1.75
+📊 blue @ 1500mm => IR: 6.28, Red: 1.69
+📊 blue @ 1500mm => IR: 6.23, Red: 1.72
+📊 blue @ 1500mm => IR: 6.24, Red: 1.83
+📊 blue @ 1500mm => IR: 6.04, Red: 1.88
+📊 blue @ 1500mm => IR: 5.90, Red: 1.88
+📊 blue @ 1500mm => IR: 5.81, Red: 1.93
+📊 blue @ 1500mm => IR: 5.77, Red: 1.94
+📊 blue @ 1500mm => IR: 5.78, Red: 1.95
+📊 blue @ 1500mm => IR: 5.76, Red: 1.98
+📊 blue @ 1500mm => IR: 5.83, Red: 2.01
+📊 blue @ 1500mm => IR: 5.83, Red: 2.05
+📊 blue @ 1500mm => IR: 5.90, Red: 2.01
+📊 blue @ 1500mm => IR: 5.93, Red: 2.08
+📊 blue @ 1500mm => IR: 5.96, Red: 2.07
+📊 blue @ 1500mm => IR: 6.02, Red: 2.03
+
+Enter LED type (red/ir): green
+Enter distance (mm): 1250
+Starting for green at 1250mm
+📊 green @ 1250mm => IR: 5.30, Red: 1.00
+📊 green @ 1250mm => IR: 6.55, Red: 0.75
+📊 green @ 1250mm => IR: 6.40, Red: 0.57
+📊 green @ 1250mm => IR: 6.03, Red: 0.50
+📊 green @ 1250mm => IR: 6.14, Red: 0.72
+📊 green @ 1250mm => IR: 6.12, Red: 0.75
+📊 green @ 1250mm => IR: 5.83, Red: 0.81
+📊 green @ 1250mm => IR: 5.62, Red: 0.88
+📊 green @ 1250mm => IR: 5.40, Red: 0.94
+📊 green @ 1250mm => IR: 5.45, Red: 1.06
+📊 green @ 1250mm => IR: 5.31, Red: 1.06
+📊 green @ 1250mm => IR: 5.20, Red: 1.22
+📊 green @ 1250mm => IR: 5.22, Red: 1.32
+📊 green @ 1250mm => IR: 5.15, Red: 1.40
+📊 green @ 1250mm => IR: 5.19, Red: 1.44
+📊 green @ 1250mm => IR: 5.31, Red: 1.48
+📊 green @ 1250mm => IR: 5.31, Red: 1.53
+📊 green @ 1250mm => IR: 5.41, Red: 1.54
+📊 green @ 1250mm => IR: 5.41, Red: 1.58
+📊 green @ 1250mm => IR: 5.43, Red: 1.54
+📊 green @ 1250mm => IR: 5.44, Red: 1.49
+📊 green @ 1250mm => IR: 5.47, Red: 1.45
+📊 green @ 1250mm => IR: 5.51, Red: 1.40
+📊 green @ 1250mm => IR: 5.50, Red: 1.39
+📊 green @ 1250mm => IR: 5.50, Red: 1.39
+📊 green @ 1250mm => IR: 5.50, Red: 1.41
+
+Enter LED type (red/ir): red
+Enter distance (mm): 900
+Starting for red at 900mm
+📊 red @ 900mm => IR: 7.20, Red: 4.80
+📊 red @ 900mm => IR: 6.95, Red: 4.65
+📊 red @ 900mm => IR: 7.23, Red: 4.13
+📊 red @ 900mm => IR: 7.70, Red: 3.95
+📊 red @ 900mm => IR: 8.06, Red: 3.92
+📊 red @ 900mm => IR: 8.08, Red: 4.13
+📊 red @ 900mm => IR: 8.27, Red: 4.16
+📊 red @ 900mm => IR: 8.44, Red: 4.12
+📊 red @ 900mm => IR: 8.50, Red: 4.12
+📊 red @ 900mm => IR: 8.59, Red: 4.11
+📊 red @ 900mm => IR: 8.67, Red: 4.07
+📊 red @ 900mm => IR: 8.65, Red: 4.07
+📊 red @ 900mm => IR: 8.72, Red: 3.98
+📊 red @ 900mm => IR: 8.77, Red: 3.91
+📊 red @ 900mm => IR: 8.75, Red: 3.82
+📊 red @ 900mm => IR: 8.64, Red: 3.76
+📊 red @ 900mm => IR: 8.71, Red: 3.71
+📊 red @ 900mm => IR: 8.73, Red: 3.69
+📊 red @ 900mm => IR: 8.69, Red: 3.64
+📊 red @ 900mm => IR: 8.65, Red: 3.61
+📊 red @ 900mm => IR: 8.61, Red: 3.57
+📊 red @ 900mm => IR: 8.58, Red: 3.56
+📊 red @ 900mm => IR: 8.54, Red: 3.57
+📊 red @ 900mm => IR: 8.53, Red: 3.58
+📊 red @ 900mm => IR: 8.56, Red: 3.58
+📊 red @ 900mm => IR: 8.57, Red: 3.61

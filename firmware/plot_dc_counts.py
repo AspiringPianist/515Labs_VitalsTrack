@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.interpolate import UnivariateSpline
 from collections import defaultdict
 
 # === Raw Data from test_distance.py ===
@@ -56,51 +55,23 @@ for d, ir, red in zip(distances, ir_values, red_values):
     ir_by_dist[d].append(ir)
     red_by_dist[d].append(red)
 
+# Calculate averages
 unique_d = sorted(ir_by_dist.keys())
 ir_avg = [np.mean(ir_by_dist[d]) for d in unique_d]
 red_avg = [np.mean(red_by_dist[d]) for d in unique_d]
 
-# === Better interpolation using UnivariateSpline ===
-x_smooth = np.linspace(min(unique_d), max(unique_d), 500)
-smoothing_factor = len(unique_d) * 100
-
-ir_spline = UnivariateSpline(unique_d, ir_avg, s=smoothing_factor, k=3)
-red_spline = UnivariateSpline(unique_d, red_avg, s=smoothing_factor, k=3)
-
-ir_smooth = ir_spline(x_smooth)
-red_smooth = red_spline(x_smooth)
-
 # Main plot
-plt.plot(x_smooth, ir_smooth, label='IR (Smoothed)', color='blue', linewidth=2)
-plt.plot(x_smooth, red_smooth, label='Red (Smoothed)', color='red', linewidth=2)
+plt.plot(unique_d, ir_avg, label='IR', color='blue', linewidth=2)
+plt.plot(unique_d, red_avg, label='Red', color='red', linewidth=2)
 plt.scatter(unique_d, ir_avg, color='navy', s=50, alpha=0.7, zorder=5, label='IR Data Points')
 plt.scatter(unique_d, red_avg, color='darkred', s=50, alpha=0.7, zorder=5, label='Red Data Points')
-plt.title("Improved DC Response vs Distance (MAX30100)")
+plt.title("DC Response vs Distance (MAX30100)")
 plt.xlabel("Distance (mm)")
 plt.ylabel("Average Sensor Reading")
 plt.grid(True, alpha=0.3)
 plt.legend()
 
-# Residuals plot
-# plt.subplot(2, 1, 2)
-# ir_residuals = np.array(ir_avg) - ir_spline(unique_d)
-# red_residuals = np.array(red_avg) - red_spline(unique_d)
-
-# plt.scatter(unique_d, ir_residuals, color='blue', s=50, alpha=0.7, label='IR Residuals')
-# plt.scatter(unique_d, red_residuals, color='red', s=50, alpha=0.7, label='Red Residuals')
-# plt.axhline(y=0, color='black', linestyle='--', alpha=0.5)
-# plt.title("Interpolation Residuals (Data - Fit)")
-# plt.xlabel("Distance (mm)")
-# plt.ylabel("Residual")
-# plt.grid(True, alpha=0.3)
-# plt.legend()
-
-# plt.tight_layout()
 plt.show()
 
-# Print some statistics
-# print("Interpolation Quality:")
-# print(f"IR RMSE: {np.sqrt(np.mean(ir_residuals**2)):.2f}")
-# print(f"Red RMSE: {np.sqrt(np.mean(red_residuals**2)):.2f}")
+# Print statistics
 print(f"Number of data points used: {len(unique_d)}")
-print(f"Smoothing factor: {smoothing_factor}")
