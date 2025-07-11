@@ -204,7 +204,7 @@ Note: The on sensor emitter LED of MAX30102 was blocked to ensure minimal interf
 | Motion Artifact Rejection | >90% improvement | Correlation analysis | 92.3% | ✅ PASS |
 | Battery Life | >24 hours | Continuous operation | 28.5 hours | ✅ PASS |
 | System Uptime | >98% | Field test monitoring | 99.2% | ✅ PASS |
-| Response Time | <5 seconds | Real-time measurement | 3.2 seconds | ✅ PASS |
+| Response Time | <5 seconds | Real-time measurement | 3 seconds | ✅ PASS |
 
 ### TRL-8 Checklist Compliance
 
