@@ -38,7 +38,7 @@ We will only use the following folders for testing:
 
 ## 📁 Folder Structure
 
-Each folder (e.g., `Calibration/`, `Temperature/`) is treated as a *cpp* file that you can copy paste into main.cpp
+Each folder (e.g., `Calibration/`, `Temperature/`) is treated as a *cpp* file that you can copy paste into main.cpp and upload to ESP32 using `Ctrl+Alt+U` via PlatformIO.
 
 | Module/Test           | Folder Name               |
 | --------------------- | ------------------------- |
