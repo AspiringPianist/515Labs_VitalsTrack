@@ -70,6 +70,8 @@ firmware/
 └── platformio.ini        # PlatformIO configuration
 ```
 
+Check out `/firmware` for a detailed README on the above.
+
 ## Script Selection
 
 - Use corresponding scripts from  `firmware/lib` and copy paste the required cpp in `main.cpp ` and hit `Ctrl+Alt+U` to upload to ESP32 via PlatformIO:
