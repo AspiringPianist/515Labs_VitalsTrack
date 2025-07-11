@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-This project presents a TRL-8 ready wearable vital signs monitoring system that addresses the critical challenge of motion artifacts in photoplethysmography (PPG) based measurements. Our solution combines the MAX30102 pulse oximeter sensor with ADXL335 accelerometer data to create an intelligent motion compensation system using machine learning deployed directly on the ESP32 microcontroller.
+This project presents a TRL-8 ready wearable vital signs monitoring system that addresses the critical challenge of motion artifacts in photoplethysmography (PPG) based measurements. Our solution combines the MAX30102 pulse oximeter sensor with ADXL335 accelerometer data to create an intelligent motion compensation system using machine learning deployed directly on the ESP32 microcontroller. We also provide testing benchmarks and methods to align with the vision of the hackthon (robust testing kit ready for sensor swaps).
 
 **Key Achievements:**
 - Complete TRL-8 compliance with extensive testing and documentation
