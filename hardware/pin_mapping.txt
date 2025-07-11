@@ -1,0 +1,202 @@
+Here's an accurate and detailed `pin_mapping.txt` for each of the provided schematics.
+
+```
+# Pin Mapping for 515 LABS Schematics
+# Date: 2025-07-10
+
+# --- Schematic: Inference_Time_Schematics_Sensor_System.jpeg ---
+# Description: Sensor System Integration (MAX30102, ADXL335, NodeMCU ESP32S)
+
+# Nodemcu 32S (U1) Pin Assignments
+# Pin: Nodemcu 32S Pin Name / GPIO # | Function / Connected Component & Pin
+# --------------------------------------------------------------------------------------------------
+# 1: 3V3                               | Power Output to MAX30102 (U2) VCC
+# 2: RST/EN                             | Not Connected (N/C)
+# 3: G36/A0/SVP                         | Not Connected (N/C)
+# 4: G39/A3/SVN                         | Connected to ADXL335BCPZ (U3) YOUT
+# 5: G34/A6                             | Connected to ADXL335BCPZ (U3) ZOUT
+# 6: G35/A7                             | Not Connected (N/C)
+# 7: G32/A4                             | Not Connected (N/C)
+# 8: G33/A5                             | Not Connected (N/C)
+# 9: G25/DA2                            | Not Connected (N/C)
+# 10: G26/DA2                           | Not Connected (N/C)
+# 11: G27                               | Not Connected (N/C)
+# 12: G14/CLK                           | Not Connected (N/C)
+# 13: G12/MISO                          | Not Connected (N/C)
+# 14: GND                               | Common Ground
+# 15: G13/MOSI                          | Not Connected (N/C)
+# 16: G0/RX2/SD2                        | Not Connected (N/C)
+# 17: G10/TX1/SD3                       | Not Connected (N/C)
+# 18: G11/CMD                           | Not Connected (N/C)
+# 19: 5V                                | Not Connected (N/C)
+# 20: CLK/G6                            | Not Connected (N/C)
+# 21: SD0/G7                            | Not Connected (N/C)
+# 22: SS/T3/G15                         | Not Connected (N/C)
+# 23: T2/G2                             | Not Connected (N/C)
+# 24: T1/G0                             | Not Connected (N/C)
+# 25: TX2/G17                           | Not Connected (N/C)
+# 26: RX2/G16                           | Not Connected (N/C)
+# 27: RX0/G3                            | Not Connected (N/C)
+# 28: TX0/G1                            | Not Connected (N/C)
+# 29: V_SCK/G18                         | Not Connected (N/C)
+# 30: V_MISO/G19                        | Not Connected (N/C)
+# 31: V_MOSI/G23                        | Not Connected (N/C)
+# 32: GND                               | Common Ground
+# 33: I2C SDA                           | Connected to MAX30102 (U2) SDA, ADXL335BCPZ (U3) SDA
+# 34: RX0/G3                            | Not Connected (N/C)
+# 35: I2C SCL                           | Connected to MAX30102 (U2) SCL, ADXL335BCPZ (U3) SCL
+# 36: V_MOSI/G23                        | Not Connected (N/C)
+# 37: V_MISO/G19                        | Not Connected (N/C)
+# 38: GND                               | Common Ground
+
+# MAX30102 (U2) Pin Assignments
+# Pin: Component Pin | Connected Nodemcu 32S Pin / Function
+# --------------------------------------------------------------------------------------------------
+# 1: VCC                              | Nodemcu 32S (U1) 3V3
+# 2: SCL                              | Nodemcu 32S (U1) I2C SCL (GPIO 35)
+# 3: SDA                              | Nodemcu 32S (U1) I2C SDA (GPIO 33)
+# 4: INT                              | Not Connected (N/C)
+# 5: IRD                              | Not Connected (N/C)
+# 6: RD                               | Not Connected (N/C)
+# 7: GND                              | Nodemcu 32S (U1) GND
+
+# ADXL335BCPZ (U3) Pin Assignments
+# Pin: Component Pin | Connected Nodemcu 32S Pin / Function
+# --------------------------------------------------------------------------------------------------
+# 8: XOUT                             | Connected to Nodemcu 32S (U1) G36/A0/SVP (GPIO 36)
+# 9: YOUT                             | Connected to Nodemcu 32S (U1) G39/A3/SVN (GPIO 39)
+# 10: ZOUT                            | Connected to Nodemcu 32S (U1) G34/A6 (GPIO 34)
+# 11: COM                             | Nodemcu 32S (U1) GND
+# 12: COM                             | Nodemcu 32S (U1) GND
+# 13: VS                              | Nodemcu 32S (U1) 3V3
+# 15: EP                              | Connected to Nodemcu 32S (U1) GND (via shared GND line)
+
+
+# --- Schematic: Distance_Quantum_Efficiency_Test_Schematic.jpeg ---
+# Description: Distance Quantum Efficiency Test (MAX30102, RGB LED, NodeMCU ESP32S)
+
+# Nodemcu 32S (U3) Pin Assignments
+# Pin: Nodemcu 32S Pin Name / GPIO # | Function / Connected Component & Pin
+# --------------------------------------------------------------------------------------------------
+# 1: 3V3                               | Power Output to MAX30102 (U6) VCC
+# 2: RST/EN                             | Not Connected (N/C)
+# 3: G36/A0/SVP                         | Not Connected (N/C)
+# 4: G39/A3/SVN                         | Not Connected (N/C)
+# 5: G34/A6                             | Connected to MAX30102 (U6) INT
+# 6: G35/A7                             | Not Connected (N/C)
+# 7: G32/A4                             | Not Connected (N/C)
+# 8: G33/A5                             | Not Connected (N/C)
+# 9: G25/DA2                            | Not Connected (N/C)
+# 10: G26/DA2                           | Not Connected (N/C)
+# 11: G27                               | Not Connected (N/C)
+# 12: G14/CLK                           | Not Connected (N/C)
+# 13: G12/MISO                          | Not Connected (N/C)
+# 14: GND                               | Common Ground
+# 15: G13/MOSI                          | Not Connected (N/C)
+# 16: G0/RX2/SD2                        | Not Connected (N/C)
+# 17: G10/TX1/SD3                       | Not Connected (N/C)
+# 18: G11/CMD                           | Not Connected (N/C)
+# 19: 5V                                | Not Connected (N/C)
+# 20: CLK/G6                            | Connected to Anode of LED1 RED (via R4 1kOhm)
+# 21: SD0/G7                            | Connected to Anode of LED1 BLUE (via R6 1kOhm)
+# 22: SS/T3/G15                         | Connected to Anode of LED1 GREEN (via R5 1kOhm)
+# 23: T2/G2                             | Not Connected (N/C)
+# 24: T1/G0                             | Not Connected (N/C)
+# 25: TX2/G17                           | Not Connected (N/C)
+# 26: RX2/G16                           | Not Connected (N/C)
+# 27: RX0/G3                            | Not Connected (N/C)
+# 28: TX0/G1                            | Not Connected (N/C)
+# 29: V_SCK/G18                         | Not Connected (N/C)
+# 30: V_MISO/G19                        | Not Connected (N/C)
+# 31: V_MOSI/G23                        | Not Connected (N/C)
+# 32: GND                               | Common Ground
+# 33: I2C SDA                           | Connected to MAX30102 (U6) SDA
+# 34: RX0/G3                            | Not Connected (N/C)
+# 35: I2C SCL                           | Connected to MAX30102 (U6) SCL
+# 36: V_MOSI/G23                        | Not Connected (N/C)
+# 37: V_MISO/G19                        | Not Connected (N/C)
+# 38: GND                               | Common Ground
+
+# MAX30102 (U6) Pin Assignments
+# Pin: Component Pin | Connected Nodemcu 32S Pin / Function
+# --------------------------------------------------------------------------------------------------
+# 1: VCC                              | Nodemcu 32S (U3) 3V3
+# 2: SCL                              | Nodemcu 32S (U3) I2C SCL (GPIO 35)
+# 3: SDA                              | Nodemcu 32S (U3) I2C SDA (GPIO 33)
+# 4: INT                              | Nodemcu 32S (U3) G34/A6 (GPIO 34)
+# 5: IRD                              | Not Connected (N/C) - Note: Emitter has been taped black
+# 6: RD                               | Not Connected (N/C)
+# 7: GND                              | Nodemcu 32S (U3) GND
+
+# LED1 3528RGB (RGB LED) Pin Assignments
+# Pin: Component Pin | Connected Nodemcu 32S Pin / Function (via Resistors)
+# --------------------------------------------------------------------------------------------------
+# Anode (Red)        | Nodemcu 32S (U3) CLK/G6 (GPIO 20) via R4 (1kOhm)
+# Anode (Green)      | Nodemcu 32S (U3) SS/T3/G15 (GPIO 22) via R5 (1kOhm)
+# Anode (Blue)       | Nodemcu 32S (U3) SD0/G7 (GPIO 21) via R6 (1kOhm)
+# Cathode            | Common Ground (GND)
+
+
+# --- Schematic: Force_Sensor_Schematics.jpeg ---
+# Description: Force Sensor Test (FSR402, MAX30102, NodeMCU ESP32S)
+
+# Nodemcu 32S (U4) Pin Assignments
+# Pin: Nodemcu 32S Pin Name / GPIO # | Function / Connected Component & Pin
+# --------------------------------------------------------------------------------------------------
+# 1: 3V3                               | Power Output to MAX30102 (U6) VCC
+# 2: RST/EN                             | Not Connected (N/C)
+# 3: G36/A0/SVP                         | Connected to FSR402 (U5) (via R1 10kOhm to GND)
+# 4: G39/A3/SVN                         | Not Connected (N/C)
+# 5: G34/A6                             | Not Connected (N/C)
+# 6: G35/A7                             | Not Connected (N/C)
+# 7: G32/A4                             | Not Connected (N/C)
+# 8: G33/A5                             | Not Connected (N/C)
+# 9: G25/DA2                            | Not Connected (N/C)
+# 10: G26/DA2                           | Not Connected (N/C)
+# 11: G27                               | Not Connected (N/C)
+# 12: G14/CLK                           | Not Connected (N/C)
+# 13: G12/MISO                          | Not Connected (N/C)
+# 14: GND                               | Common Ground
+# 15: G13/MOSI                          | Not Connected (N/C)
+# 16: G0/RX2/SD2                        | Not Connected (N/C)
+# 17: G10/TX1/SD3                       | Not Connected (N/C)
+# 18: G11/CMD                           | Not Connected (N/C)
+# 19: 5V                                | Not Connected (N/C)
+# 20: CLK/G6                            | Not Connected (N/C)
+# 21: SD0/G7                            | Not Connected (N/C)
+# 22: SS/T3/G15                         | Not Connected (N/C)
+# 23: T2/G2                             | Not Connected (N/C)
+# 24: T1/G0                             | Not Connected (N/C)
+# 25: TX2/G17                           | Not Connected (N/C)
+# 26: RX2/G16                           | Not Connected (N/C)
+# 27: RX0/G3                            | Not Connected (N/C)
+# 28: TX0/G1                            | Not Connected (N/C)
+# 29: V_SCK/G18                         | Not Connected (N/C)
+# 30: V_MISO/G19                        | Not Connected (N/C)
+# 31: V_MOSI/G23                        | Not Connected (N/C)
+# 32: GND                               | Common Ground
+# 33: I2C SDA                           | Connected to MAX30102 (U6) SDA
+# 34: RX0/G3                            | Not Connected (N/C)
+# 35: I2C SCL                           | Connected to MAX30102 (U6) SCL
+# 36: V_MOSI/G23                        | Not Connected (N/C)
+# 37: V_MISO/G19                        | Not Connected (N/C)
+# 38: GND                               | Common Ground
+
+# FSR402 (U5) Force Sensitive Resistor Pin Assignments
+# Pin: Component Pin | Connected Nodemcu 32S Pin / Function (via Resistor)
+# --------------------------------------------------------------------------------------------------
+# Top Terminal       | Nodemcu 32S (U4) 3V3 (Power Source)
+# Bottom Terminal    | Nodemcu 32S (U4) G36/A0/SVP (GPIO 36)
+#                    | Also connected to GND via R1 (10kOhm) for voltage divider setup
+
+# MAX30102 (U6) Pin Assignments
+# Pin: Component Pin | Connected Nodemcu 32S Pin / Function
+# --------------------------------------------------------------------------------------------------
+# 1: VCC                              | Nodemcu 32S (U4) 3V3
+# 2: SCL                              | Nodemcu 32S (U4) I2C SCL (GPIO 35)
+# 3: SDA                              | Nodemcu 32S (U4) I2C SDA (GPIO 33)
+# 4: INT                              | Not Connected (N/C)
+# 5: IRD                              | Not Connected (N/C)
+# 6: RD                               | Not Connected (N/C)
+# 7: GND                              | Nodemcu 32S (U4) GND
+```
