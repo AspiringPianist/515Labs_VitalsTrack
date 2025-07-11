@@ -25,13 +25,11 @@ This project presents a TRL-8 ready wearable vital signs monitoring system that 
 ## System Architecture & Hardware Design
 
 ### Main System Schematic
-![alt text](sensors.png)
+<img width="1600" height="1402" alt="sensors" src="https://github.com/user-attachments/assets/d1a253aa-4b8d-412f-8caa-0b95eddf3ac8" />
 
 ### PCB Layout & Wearable Form Factor
-<div style="display: flex; justify-content: center; gap: 20px;">
-  <img src="WhatsApp Image 2025-07-11 at 23.00.52_24ee66ac.jpg" alt="alt text" style="width:48%;"/>
-  <img src="WhatsApp Image 2025-07-11 at 23.00.53_e43f3092.jpg" alt="alt text" style="width:48%;"/>
-</div>
+![WhatsApp Image 2025-07-11 at 23 00 52_24ee66ac](https://github.com/user-attachments/assets/563181c0-a21a-4b20-bb7f-60be718c1ebc)
+![WhatsApp Image 2025-07-11 at 23 00 53_e43f3092](https://github.com/user-attachments/assets/4ae734b1-7278-4fa7-9cb3-a6e52c431a70)
 
 ---
 
@@ -55,11 +53,7 @@ This project presents a TRL-8 ready wearable vital signs monitoring system that 
 - **Validation:** 30% holdout
 - **Performance Metrics:**
 
-![alt text](<WhatsApp Image 2025-07-11 at 16.17.16_94bcbd4b.jpg>)
-### Motion Correlation Analysis & Visualization
-*[Insert correlation plots showing relationship between motion intensity and measurement accuracy]*
-*[Insert confusion matrix and ROC curves for motion artifact detection]*
-*[Insert feature importance plot from Random Forest model]*
+![WhatsApp Image 2025-07-11 at 16 17 16_94bcbd4b](https://github.com/user-attachments/assets/f4f2717f-17b1-495a-91fc-0362dc7d820a)
 
 ### Edge Deployment
 - **Model Compression:** Quantized to 8-bit integers
@@ -83,13 +77,13 @@ Note: The on sensor emitter LED of MAX30102 was blocked to ensure minimal interf
 | Blue (470nm) | 15cm | 900 |
 
 
-
-
 ### Test Circuit Schematic
-![alt text](image.png)
+<img width="938" height="823" alt="image" src="https://github.com/user-attachments/assets/44d95a63-875f-48af-80c7-898d657027eb" />
+
 
 ### Quantum Efficiency Plots
-![alt text](image-1.png)
+<img width="1536" height="754" alt="image-1" src="https://github.com/user-attachments/assets/7c17f865-2e05-4468-a028-5a747f2b5d87" />
+
 
 ## Distance Characterization Testing
 
@@ -107,8 +101,8 @@ Note: The on sensor emitter LED of MAX30102 was blocked to ensure minimal interf
 
 ### Distance Response Plots
 <div style="display: flex; justify-content: center; gap: 20px;">
-  <img src="WhatsApp Image 2025-07-11 at 16.47.21_521127f7.jpg" alt="alt text" style="width:48%;"/>
-  <img src="WhatsApp Image 2025-07-11 at 16.28.06_7ad14deb.jpg" alt="alt text" style="width:48%;"/>
+  <img src="https://github.com/user-attachments/assets/c3731d60-6307-4968-93c6-743f1d666169" alt="alt text" style="width:48%;"/>
+  <img src="https://github.com/user-attachments/assets/35f7582d-b97e-4572-b718-b0a432a8ecf4" alt="alt text" style="width:48%;"/>
 </div>
 
 ## Force Analysis & Contact Pressure Testing
@@ -118,7 +112,8 @@ Note: The on sensor emitter LED of MAX30102 was blocked to ensure minimal interf
 - **Contact Area:** 0.4cm² sensor contact
 
 ### Test Configuration Schematic
-![alt text](force.png)
+<img width="1600" height="1402" alt="force" src="https://github.com/user-attachments/assets/bcb89216-f42f-4e6c-be8c-818e84ce0550" />
+
 
 ### Results & Analysis
 **Optimal Performance:**
@@ -127,8 +122,10 @@ Note: The on sensor emitter LED of MAX30102 was blocked to ensure minimal interf
 - Signal Quality: >90% at optimal pressure
 
 ### Force Response Plots
-![alt text](<WhatsApp Image 2025-07-11 at 16.42.33_cecc8cee.jpg>)
-![alt text](<WhatsApp Image 2025-07-11 at 16.42.33_2a5f12a8.jpg>)
+![WhatsApp Image 2025-07-11 at 16 42 33_cecc8cee](https://github.com/user-attachments/assets/c143e023-e40c-4d74-9c9b-a14e7daec168)
+
+![WhatsApp Image 2025-07-11 at 16 42 33_2a5f12a8](https://github.com/user-attachments/assets/4ad71f5d-ff4f-4db6-87e3-785f875cca64)
+
 
 ---
 
@@ -139,7 +136,8 @@ Note: The on sensor emitter LED of MAX30102 was blocked to ensure minimal interf
 - **Test Duration:** 1 hour
 
 ### Temperature Drift Plots
-![alt text](image-2.png)
+<img width="1653" height="993" alt="image-2" src="https://github.com/user-attachments/assets/8dad5354-a297-4d8e-92ca-b05acf314006" />
+
 
 ---
 
@@ -152,24 +150,26 @@ Note: The on sensor emitter LED of MAX30102 was blocked to ensure minimal interf
 - **Storage:** CSV format with synchronized timestamps
 
 ### Data Logging Architecture
-![alt text](<WhatsApp Image 2025-07-11 at 23.20.51_72280095.jpg>)
+![WhatsApp Image 2025-07-11 at 23 20 51_72280095](https://github.com/user-attachments/assets/7a72fe43-8941-41e0-9f0b-dff6ff006087)
+
 
 ### Results & Analysis
 - **System Uptime:** 99.97%
 - **Battery Performance:** 24 hours continuous operation
 
 ### 24-Hour Data Visualization
-![alt text](image-4.png)
-![alt text](image-5.png)
-![alt text](image-6.png)
+<img width="4470" height="3498" alt="image-4" src="https://github.com/user-attachments/assets/61a9143b-8d72-459e-ad92-267681293c0f" />
+<img width="4473" height="866" alt="image-5" src="https://github.com/user-attachments/assets/a9146821-438f-4309-9618-bd190bb5afba" />
+<img width="4470" height="2955" alt="image-6" src="https://github.com/user-attachments/assets/dada2bff-3a8a-4a40-a4a0-9b71841b4354" />
+
 ---
 
 ## Endurance Testing (100+ Hours)
 
 ### Test Setup & Methodology
-- **Test Duration:** 120 hours continuous operation
+- **Test Duration:** 100 hours continuous operation
 - **Environment:** Controlled environment
-- **Monitoring:** Automated data collection every 10 minutes
+- **Monitoring:** Automated data collection
 
 ### Results & Analysis
 - **Measurement Drift:** <1% over test period
@@ -186,8 +186,8 @@ Note: The on sensor emitter LED of MAX30102 was blocked to ensure minimal interf
 
 ### Results & Analysis
 - **Data Loss:** <1% data loss
-- **User Comfort:** Rated 4.2/5 in user study
-- **Motion Artifact Rejection:** 92.3% improvement during active periods
+- **User Comfort:** Rated 4/5 in user study
+- **Motion Artifact Rejection:** 95.3% improvement during active periods
 
 ---
 
