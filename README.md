@@ -101,6 +101,8 @@ Check out `/firmware` for a detailed README on the above.
   └───Temperature
   ```
 
+  Note: The default script is ml_inference.cpp which runs a pretrained model on ESP32. View it via record_ml_model.py
+
 ## Data logging
 
 Two Python scripts are provided for data logging and visualization:
