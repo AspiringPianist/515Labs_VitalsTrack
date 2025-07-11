@@ -28,8 +28,10 @@ This project presents a TRL-8 ready wearable vital signs monitoring system that 
 <img width="1600" height="1402" alt="sensors" src="https://github.com/user-attachments/assets/d1a253aa-4b8d-412f-8caa-0b95eddf3ac8" />
 
 ### PCB Layout & Wearable Form Factor
-![WhatsApp Image 2025-07-11 at 23 00 52_24ee66ac](https://github.com/user-attachments/assets/563181c0-a21a-4b20-bb7f-60be718c1ebc)
-![WhatsApp Image 2025-07-11 at 23 00 53_e43f3092](https://github.com/user-attachments/assets/4ae734b1-7278-4fa7-9cb3-a6e52c431a70)
+<div style="display: flex; justify-content: center; gap: 20px;">
+  <img src="[https://github.com/user-attachments/assets/c3731d60-6307-4968-93c6-743f1d666169](https://github.com/user-attachments/assets/563181c0-a21a-4b20-bb7f-60be718c1ebc)" alt="alt text" style="width:48%;"/>
+  <img src="[https://github.com/user-attachments/assets/35f7582d-b97e-4572-b718-b0a432a8ecf4](https://github.com/user-attachments/assets/4ae734b1-7278-4fa7-9cb3-a6e52c431a70)" alt="alt text" style="width:48%;"/>
+</div>
 
 ---
 
