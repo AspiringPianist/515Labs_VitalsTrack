@@ -338,22 +338,10 @@ The system meets all specified requirements while staying well under the ₹4,00
 
 ---
 
-## Supporting Documentation
-
-### Complete Data Repository
-- **Raw Data Files:** [Link to CSV files and datasets]
-- **Analysis Scripts:** [Link to Python/MATLAB analysis code]
-- **Calibration Data:** [Link to calibration certificates]
-
-### Design Files
-- **Firmware Source Code:** [Link to GitHub repository]
-- **Schematic Files:** [Link to KiCad/Altium files]
-- **PCB Design:** [Link to Gerber files]
-- **3D Models:** [Link to STL files and manufacturing docs]
 
 ### Contact Information
 - **Team:** 515 Labs
-- **Email:** snehal.sharma@iiitb.ac.in
+- **Email:** snehal.sharma@iiitb.ac.in , unnath.chittimalla@iiitb.ac.in, ramkushal.b@iiitb.ac.in
 - **Institution:** IIIT Bangalore
 
 ---
