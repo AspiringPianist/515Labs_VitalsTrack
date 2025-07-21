@@ -1,0 +1,7 @@
+# VitalsTrack Lightweight Dashboard Requirements
+# Install with: pip install -r requirements_lite.txt
+
+# Essential dependencies only
+bleak>=0.20.0
+matplotlib>=3.7.0
+asyncio-mqtt>=0.13.0
