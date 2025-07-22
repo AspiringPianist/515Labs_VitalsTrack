@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define EXPECTED_PART_ID            0x11
 #define RINGBUFFER_SIZE             16
 
-#define I2C_BUS_SPEED               400000UL
+#define I2C_BUS_SPEED               100000UL  // Using 100kHz for better stability
 
 typedef struct {
     uint16_t ir;

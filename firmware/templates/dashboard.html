@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VitalsTrack Dashboard</title>
+    <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js"></script>
+    <style>
+        body { background-color: #2c3e50; color: #ecf0f1; }
+        canvas { max-height: 300px; }
+        .plot-container { background-color: #34495e; border-radius: 8px; padding: 10px; }
+        .disabled { opacity: 0.5; pointer-events: none; }
+        #stats-text { white-space: pre; font-family: monospace; font-size: 0.9rem; }
+    </style>
+</head>
+<body class="p-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <h1 class="text-3xl font-bold text-center mb-6">VitalsTrack Dashboard</h1>
+
+        <!-- Controls -->
+        <div class="bg-gray-700 p-4 rounded-lg mb-4">
+            <div class="flex flex-wrap gap-4 items-center">
+                <div class="flex items-center">
+                    <label for="mode" class="mr-2 font-bold">Mode:</label>
+                    <select id="mode" class="bg-gray-800 text-white p-2 rounded">
+                        <option value="hr_spo2">HR/SpO2</option>
+                        <option value="temperature">Temperature</option>
+                        <option value="force_test">Force Test</option>
+                        <option value="distance_test">Distance Test</option>
+                        <option value="quality">Quality</option>
+                        <option value="raw_data">Raw Data</option>
+                    </select>
+                </div>
+                <button id="connect-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Connect</button>
+                <button id="disconnect-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled" disabled>Disconnect</button>
+                <button id="record-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled" disabled>Start Recording</button>
+                <button id="clear-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled" disabled>Clear Data</button>
+                <div class="flex gap-2">
+                    <button id="export-csv" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled" disabled>Export CSV</button>
+                    <button id="export-json" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled" disabled>Export JSON</button>
+                    <button id="export-matlab" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded disabled" disabled>Export MATLAB</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="bg-gray-700 p-4 rounded-lg mb-4 flex flex-wrap gap-4">
+            <div>
+                <span class="font-bold">Connection:</span>
+                <span id="connection-status" class="text-red-500">Disconnected</span>
+            </div>
+            <div>
+                <span class="font-bold">Mode:</span>
+                <span id="mode-status">Idle</span>
+            </div>
+            <div>
+                <span class="font-bold">Data:</span>
+                <span id="data-status">N/A</span>
+            </div>
+            <div>
+                <span class="font-bold">Samples:</span>
+                <span id="samples-status">0</span>
+            </div>
+            <div>
+                <span class="font-bold">Data Rate:</span>
+                <span id="data-rate-status">0 Hz</span>
+            </div>
+        </div>
+
+        <!-- Plots -->
+        <div id="plots" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Plots dynamically added here -->
+        </div>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:5000');
+        let charts = [];
+        let modeSwitchTimeout = null;
+        let totalSamples = 0;
+        let goodSamples = 0;
+        let dataTimeout = null;
+
+        // Initialize plots based on mode
+        function setupPlots(mode) {
+            const plotsDiv = document.getElementById('plots');
+            plotsDiv.innerHTML = '';
+            charts.forEach(chart => chart.destroy());
+            charts = [];
+
+            if (mode === 'quality') {
+                createPlot('hr-plot', 'Heart Rate (BPM)', 'line', ['hr'], ['#ff0000']);
+                createPlot('spo2-plot', 'SpO2 (%)', 'line', ['spo2'], ['#0000ff']);
+                createPlot('quality-plot', 'ML Quality Assessment', 'scatter', ['quality'], ['#ff9900'], { y: { min: -0.1, max: 1.1 } });
+                createPlot('accel-plot', 'Accelerometer (g)', 'line', ['accel_x', 'accel_y', 'accel_z'], ['#ff0000', '#00ff00', '#0000ff'], { xLabel: 'Time (s)' });
+                createPlot('accel-mag-plot', 'Acceleration Magnitude (g)', 'line', ['accel_mag'], ['#800080'], { xLabel: 'Time (s)' });
+                createStatsText('stats-plot', 'Quality Statistics');
+            } else {
+                createPlot('hr-spo2-plot', 'Heart Rate & SpO2', 'line', ['hr', 'spo2'], ['#ff0000', '#0000ff']);
+                createPlot('temp-plot', 'Temperature (°C)', 'line', ['temperature'], ['#00ff00']);
+                createPlot('force-ir-red-plot', 'Force & IR/Red', 'line', ['force', 'ir', 'red'], ['#ff00ff', '#00ffff', '#ffff00']);
+                createPlot('accel-plot', 'Accelerometer (g)', 'line', ['accel_x', 'accel_y', 'accel_z'], ['#ff0000', '#00ff00', '#0000ff']);
+            }
+        }
+
+        // Create a Chart.js plot
+        function createPlot(id, title, type, datasets, colors, options = {}) {
+            const div = document.createElement('div');
+            div.className = 'plot-container';
+            const canvas = document.createElement('canvas');
+            canvas.id = id;
+            div.appendChild(canvas);
+            document.getElementById('plots').appendChild(div);
+
+            const chart = new Chart(canvas, {
+                type: type,
+                data: {
+                    labels: [],
+                    datasets: datasets.map((key, i) => ({
+                        label: key.replace('_', ' ').toUpperCase(),
+                        data: [],
+                        borderColor: colors[i],
+                        backgroundColor: type === 'scatter' ? colors[i] : 'transparent',
+                        pointBackgroundColor: key === 'quality' ? data => data.raw === 1 ? '#00ff00' : '#ff0000' : colors[i],
+                        fill: false,
+                        tension: 0.1
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            title: { display: !!options.xLabel, text: options.xLabel || '' },
+                            type: 'linear',
+                            ticks: { callback: value => (value / 1000).toFixed(1) }
+                        },
+                        y: { 
+                            title: { display: true, text: title },
+                            ...options.y
+                        }
+                    },
+                    plugins: { legend: { display: datasets.length > 1 } }
+                }
+            });
+            charts.push(chart);
+        }
+
+        // Create stats text area for QUALITY mode
+        function createStatsText(id, title) {
+            const div = document.createElement('div');
+            div.className = 'plot-container flex items-center justify-center';
+            div.innerHTML = `<h3 class="text-lg font-bold text-white mb-2">${title}</h3><pre id="${id}" class="text-white"></pre>`;
+            document.getElementById('plots').appendChild(div);
+        }
+
+        // Update plots with new data
+        function updatePlots(data, mode) {
+            const timestamps = data.timestamps.map(t => t - (data.timestamps[0] || 0));
+            charts.forEach(chart => {
+                chart.data.labels = timestamps;
+                chart.data.datasets.forEach(dataset => {
+                    const key = dataset.label.toLowerCase().replace(' ', '_');
+                    if (key.includes('accel_')) {
+                        const axis = key.split('_')[1];
+                        dataset.data = data.data.accelerometer[axis] || [];
+                    } else if (key === 'quality' && mode === 'quality') {
+                        dataset.data = data.data.quality.map(q => ({ x: timestamps[data.data.quality.indexOf(q)], y: q, raw: q }));
+                    } else {
+                        // Only update relevant data for the mode
+                        const relevantKeys = {
+                            'hr_spo2': ['hr', 'spo2'],
+                            'temperature': ['temperature'],
+                            'force_test': ['force'],
+                            'distance_test': ['ir', 'red'],
+                            'quality': ['hr', 'spo2', 'quality', 'accel_mag'],
+                            'raw_data': ['hr', 'ir', 'red']
+                        }[mode] || [];
+                        dataset.data = relevantKeys.includes(key) ? data.data[key] || [] : [];
+                    }
+                });
+                chart.update();
+            });
+
+            if (mode === 'quality') {
+                const statsText = document.getElementById('stats-plot');
+                if (statsText && data.data.hr.length > 0) {
+                    const qualityPct = totalSamples > 0 ? (goodSamples / totalSamples) * 100 : 0;
+                    statsText.innerText = `CURRENT VALUES:
+Heart Rate: ${data.data.hr.slice(-1)[0]?.toFixed(1) || 0} BPM
+SpO2: ${data.data.spo2.slice(-1)[0]?.toFixed(1) || 0}%
+Accel Mag: ${data.data.accel_mag.slice(-1)[0]?.toFixed(3) || 0}g
+Quality: ${data.data.quality.slice(-1)[0] === 1 ? 'GOOD' : 'POOR'}
+
+STATISTICS:
+Total Samples: ${totalSamples}
+Good Samples: ${goodSamples}
+Overall Quality: ${qualityPct.toFixed(1)}%
+Runtime: ${(timestamps.slice(-1)[0] / 1000).toFixed(1)}s`;
+                }
+            }
+        }
+
+        // Socket.IO event handlers
+        socket.on('connect', () => console.log('Connected to server'));
+        socket.on('connection_status', data => {
+            document.getElementById('connection-status').textContent = data.connected ? 'Connected' : data.error || 'Disconnected';
+            document.getElementById('connection-status').className = data.connected ? 'text-green-500' : 'text-red-500';
+            document.getElementById('connect-btn').disabled = data.connected;
+            document.getElementById('disconnect-btn').disabled = !data.connected;
+            document.getElementById('record-btn').disabled = !data.connected;
+            document.getElementById('clear-btn').disabled = !data.connected;
+            document.getElementById('export-csv').disabled = !data.connected;
+            document.getElementById('export-json').disabled = !data.connected;
+            document.getElementById('export-matlab').disabled = !data.connected;
+            if (data.connected && data.device) {
+                document.getElementById('data-status').textContent = `Device: ${data.device.name}`;
+            }
+        });
+
+        socket.on('mode_update', data => {
+            const mode = data.mode && typeof data.mode === 'string' ? data.mode.toLowerCase() : document.getElementById('mode').value;
+            document.getElementById('mode').value = mode;
+            document.getElementById('mode-status').textContent = mode.replace('_', ' ').toUpperCase();
+            setupPlots(mode);
+            socket.emit('request_data');
+            // Force data refresh if no data received in 5 seconds
+            if (dataTimeout) clearTimeout(dataTimeout);
+            dataTimeout = setTimeout(() => socket.emit('request_data'), 5000);
+        });
+
+        socket.on('sensor_data', data => {
+            totalSamples = data.stats.sample_count;
+            goodSamples += data.data.quality === 1 ? 1 : 0;
+            document.getElementById('samples-status').textContent = totalSamples;
+            document.getElementById('data-rate-status').textContent = `${data.stats.data_rate.toFixed(2)} Hz`;
+            document.getElementById('data-status').textContent = getDataStatus(data.mode, data.data);
+            socket.emit('request_data');
+        });
+
+        socket.on('specialized_data', data => {
+            if (data.type === 'quality') {
+                goodSamples += data.data.quality === 1 ? 1 : 0;
+                socket.emit('request_data');
+            }
+        });
+
+        socket.on('recording_status', data => {
+            document.getElementById('record-btn').textContent = data.recording ? 'Stop Recording' : 'Start Recording';
+            alert(data.message);
+        });
+
+        socket.on('data_update', data => {
+            updatePlots(data, data.mode.toLowerCase());
+            if (dataTimeout) clearTimeout(dataTimeout);
+        });
+
+        socket.on('data_cleared', () => {
+            totalSamples = 0;
+            goodSamples = 0;
+            setupPlots(document.getElementById('mode').value);
+            alert('Data cleared');
+        });
+
+        // Event listeners
+        document.getElementById('connect-btn').addEventListener('click', () => {
+            fetch('/api/connect', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => !data.success && alert(data.error || 'Connection failed'));
+        });
+
+        document.getElementById('disconnect-btn').addEventListener('click', () => {
+            fetch('/api/disconnect', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => !data.success && alert(data.error || 'Disconnect failed'));
+        });
+
+        document.getElementById('mode').addEventListener('change', e => {
+            if (modeSwitchTimeout) clearTimeout(modeSwitchTimeout);
+            modeSwitchTimeout = setTimeout(() => {
+                fetch('/api/mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: e.target.value.toUpperCase() })
+                })
+                    .then(res => res.json())
+                    .then(data => !data.success && alert(data.error || 'Mode change failed'));
+            }, 3000);
+        });
+
+        document.getElementById('record-btn').addEventListener('click', () => {
+            socket.emit('toggle_recording');
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            fetch('/api/clear', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => !data.success && alert(data.error || 'Clear failed'));
+        });
+
+        document.getElementById('export-csv').addEventListener('click', () => downloadExport('csv'));
+        document.getElementById('export-json').addEventListener('click', () => downloadExport('json'));
+        document.getElementById('export-matlab').addEventListener('click', () => downloadExport('matlab'));
+
+        // Helper functions
+        function getDataStatus(mode, data) {
+            switch (mode) {
+                case 'HR_SPO2': return `HR: ${data.hr?.toFixed(1) || 0} bpm, SpO2: ${data.spo2?.toFixed(1) || 0}%`;
+                case 'TEMPERATURE': return `Temp: ${data.temperature?.toFixed(1) || 0}°C`;
+                case 'FORCE_TEST': return `Force: ${data.fsr?.toFixed(0) || 0}, Label: ${data.label || 'N/A'}`;
+                case 'DISTANCE_TEST': return `IR: ${data.ir?.toFixed(0) || 0}, Red: ${data.red?.toFixed(0) || 0}, Distance: ${data.distance_mm || 0}mm`;
+                case 'QUALITY': return `HR: ${data.hr?.toFixed(1) || 0}, SpO2: ${data.spo2?.toFixed(1) || 0}, Quality: ${data.quality === 1 ? 'GOOD' : 'POOR'}`;
+                case 'RAW_DATA': return `HR: ${data.hr?.toFixed(1) || 0}, IR: ${data.ir?.toFixed(0) || 0}, Red: ${data.red?.toFixed(0) || 0}`;
+                default: return 'N/A';
+            }
+        }
+
+        function downloadExport(format) {
+            fetch(`/api/export/${format}`)
+                .then(res => {
+                    if (!res.ok) throw new Error('Export failed');
+                    return res.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `vitals_data_${new Date().toISOString().replace(/[:.]/g, '')}.${format}`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(err => alert(`Export failed: ${err.message}`));
+        }
+
+        // Initialize
+        setupPlots('hr_spo2');
+        socket.emit('request_data');
+    </script>
+</body>
+</html>

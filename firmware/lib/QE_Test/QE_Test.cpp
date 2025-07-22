@@ -69,7 +69,7 @@ void setup_sensor() {
         Serial.println("SUCCESS");
     }
     sensor.setMode(MAX30100_MODE_SPO2_HR);
-    sensor.setLedsCurrent(MAX30100_LED_CURR_50MA, MAX30100_LED_CURR_50MA);
+    sensor.setLedsCurrent(MAX30100_LED_CURR_24MA, MAX30100_LED_CURR_24MA);  // Set both IR and Red to 24mA
     sensor.setHighresModeEnabled(true);
     Serial.println("Sensor configured for distance testing");
 }

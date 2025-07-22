@@ -31,7 +31,7 @@ void setup_oximeter() {
   } else {
     Serial.println("SUCCESS");
   }
-  pox.setIRLedCurrent(MAX30100_LED_CURR_7_6MA);
+  pox.setIRLedCurrent(MAX30100_LED_CURR_24MA);  // Set to 24mA for optimal HR/SpO2 signal strength
 }
 
 void setup_accel() {

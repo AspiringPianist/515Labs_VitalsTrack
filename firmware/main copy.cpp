@@ -4,7 +4,6 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
-#include <esp_wifi.h>
 #include "ADXL335.h"
 #include "MAX30100_PulseOximeter.h"
 #include "MAX30100.h"
@@ -19,7 +18,7 @@
 // MODE:FORCE_TEST     - Force sensor testing with labels
 // MODE:DISTANCE_TEST  - Distance/quantum efficiency testing
 // MODE:QUALITY        - ML-based quality assessment
-// MODE:RAW_DATA       - Raw sensor data collection
+// MODE:RAW_DATA      - Raw sensor data collection
 
 // Operating modes
 enum OperatingMode {
@@ -35,15 +34,13 @@ enum OperatingMode {
 // Global variables
 OperatingMode currentMode = MODE_IDLE;
 uint32_t tsLastReport = 0;
-uint32_t reportingPeriod = 500;  // Default 2Hz (500ms) for all modes
+uint32_t reportingPeriod = 1000;
 bool clientConnected = false;
 
-// Sensor objects - static to avoid dynamic allocation
-PulseOximeter pox;
-MAX30100 rawSensor;
+// Sensor objects - only initialize what we need
+PulseOximeter* pox = nullptr;
+MAX30100* rawSensor = nullptr;
 ADXL335 accel;
-bool poxInitialized = false;
-bool rawSensorInitialized = false;
 
 // Sensor data
 float ax = 0.0, ay = 0.0, az = 0.0;
@@ -65,14 +62,14 @@ static const BLEUUID statusCharUUID("abcdefab-1234-5678-1234-56789abcdef3");
 
 // Mode-specific variables
 struct {
-    char currentLabel[16] = "waiting";
+    String currentLabel = "waiting";
     bool isCollecting = false;
     uint32_t collectionStartTime = 0;
-    uint32_t collectionDuration = 10000;
+    uint32_t collectionDuration = 10000; // 10 seconds default
 } forceTest;
 
 struct {
-    char currentLED[8] = "none";
+    String currentLED = "none";
     int currentDistance = 0;
     bool collectingData = false;
     uint32_t irSum = 0;
@@ -104,12 +101,10 @@ struct {
 // ==================================================
 void onBeatDetected();
 void sendStatus();
-void handleControlCommand(const char* command);
-void switchMode(const char* modeName);
+void handleControlCommand(String command);
+void switchMode(String modeName);
 int assessDataQuality();
 bool checkMemory(const char* operation);
-void resetSensors();
-bool primeSensor(); // New function for priming
 
 // ==================================================
 // UTILITY FUNCTIONS
@@ -122,95 +117,11 @@ void onBeatDetected() {
 bool checkMemory(const char* operation) {
     uint32_t freeHeap = ESP.getFreeHeap();
     Serial.printf("💾 %s - Free heap: %u bytes\n", operation, freeHeap);
-    if (freeHeap < 30000) {
+    
+    if (freeHeap < 30000) { // Less than 30KB free (reduced for boards without PSRAM)
         Serial.println("⚠️  WARNING: Low memory!");
         return false;
     }
-    return true;
-}
-
-void resetSensors() {
-    Serial.println("🔄 Resetting sensors...");
-    
-    // First shutdown any active sensors
-    if (poxInitialized) {
-        pox.shutdown();
-        delay(50);  // Give time for shutdown to complete
-        poxInitialized = false;
-    }
-    if (rawSensorInitialized) {
-        rawSensor.shutdown();
-        delay(50);  // Give time for shutdown to complete
-        rawSensorInitialized = false;
-    }
-    
-    // Reset I2C bus
-    Wire.end();
-    delay(100);  // Allow bus to fully reset
-    
-    // Reinitialize I2C
-    Wire.begin();
-    Wire.setClock(100000);  // 100kHz I2C for better stability
-    delay(50);  // Allow bus to stabilize
-    
-    // Reset MAX30100 registers to default state
-    Wire.beginTransmission(0x57);  // MAX30100 I2C address
-    Wire.write(0xFF);  // Reset command register
-    Wire.write(0x40);  // Reset command
-    Wire.endTransmission();
-    delay(100);  // Wait for reset to complete
-    
-    Serial.println("✅ Sensors and I2C bus reset");
-}
-
-bool primeSensor(PulseOximeter& poxSensor, MAX30100& rawSensor, bool isPulseOximeter) {
-    Serial.print("🔧 Priming sensor... ");
-    
-    // Step 1: Reset FIFO and mode
-    if (isPulseOximeter) {
-        poxSensor.shutdown();
-        if (!poxSensor.begin()) {
-            Serial.println("FAILED to begin during priming");
-            return false;
-        }
-        poxSensor.setIRLedCurrent(MAX30100_LED_CURR_24MA);  // Set to 24mA for optimal HR/SpO2 signal strength
-    } else {
-        rawSensor.resetFifo();
-        rawSensor.shutdown();
-        if (!rawSensor.begin()) {
-            Serial.println("FAILED to begin during priming");
-            return false;
-        }
-        rawSensor.setMode(MAX30100_MODE_SPO2_HR);
-        rawSensor.setLedsCurrent(MAX30100_LED_CURR_24MA, MAX30100_LED_CURR_24MA);  // Set both IR and Red to 24mA
-        rawSensor.setHighresModeEnabled(true);  // Enable high resolution mode for consistency
-    }
-    
-    // Step 2: Perform dummy reads to stabilize
-    uint32_t startTime = millis();
-    uint16_t dummyIr, dummyRed;
-    for (int i = 0; i < 10; i++) { // 10 dummy reads
-        if (isPulseOximeter) {
-            poxSensor.update();
-        } else {
-            rawSensor.update();
-            rawSensor.getRawValues(&dummyIr, &dummyRed);
-        }
-        delay(20); // 20ms per read, total ~200ms
-        if (millis() - startTime > 500) { // Timeout after 500ms
-            Serial.println("FAILED: Priming timeout");
-            return false;
-        }
-    }
-    
-    // Step 3: Verify sensor state
-    bool isReady = isPulseOximeter ? poxSensor.begin() : rawSensor.begin();
-    if (!isReady) {
-        Serial.println("FAILED: Sensor not ready after priming");
-        return false;
-    }
-    
-    Serial.println("✅ SUCCESS");
     return true;
 }
 
@@ -228,21 +139,13 @@ class ServerCallbacks: public BLEServerCallbacks {
     void onDisconnect(BLEServer* pServer) {
         clientConnected = false;
         Serial.println("📱 Client disconnected - restarting advertising");
-        resetSensors();
-        currentMode = MODE_IDLE;
-        reportingPeriod = 500;  // Consistent 2Hz (500ms) for all modes
-        tsLastReport = 0;
-        forceTest.isCollecting = false;
-        distanceTest.collectingData = false;
-        temperatureMode.tempSamplingStarted = false;
-        qualityMode.hasPreviousData = false;
         BLEDevice::startAdvertising();
     }
 };
 
 class ControlCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic* pCharacteristic) {
-        const char* value = pCharacteristic->getValue().c_str();
+        String value = pCharacteristic->getValue().c_str();
         handleControlCommand(value);
     }
 };
@@ -255,7 +158,7 @@ void sendStatus() {
     if (!clientConnected) return;
     
     const char* modeNames[] = {"IDLE", "HR_SPO2", "TEMPERATURE", "FORCE_TEST", "DISTANCE_TEST", "QUALITY", "RAW_DATA"};
-    char buffer[150];
+    char buffer[150];  // Reduced from 200
     snprintf(buffer, sizeof(buffer),
         "{\"status\":\"ready\",\"mode\":\"%s\",\"uptime\":%lu,\"free_heap\":%u}",
         modeNames[currentMode], millis(), ESP.getFreeHeap()
@@ -265,41 +168,44 @@ void sendStatus() {
     statusChar->notify();
 }
 
+void cleanupSensors() {
+    Serial.printf("💾 Before cleanup - Free heap: %u bytes\n", ESP.getFreeHeap());
+    
+    if (pox != nullptr) {
+        delete pox;
+        pox = nullptr;
+    }
+    if (rawSensor != nullptr) {
+        delete rawSensor;
+        rawSensor = nullptr;
+    }
+    
+    Serial.printf("💾 After cleanup - Free heap: %u bytes\n", ESP.getFreeHeap());
+}
+
 bool initializePulseOximeter() {
     if (!checkMemory("Before pulse oximeter init")) {
         return false;
     }
     
-    resetSensors();
-    
-    // Wait for sensor to be fully reset
-    delay(200);
+    cleanupSensors();
+    pox = new PulseOximeter();
     
     Serial.print("🔧 Initializing pulse oximeter... ");
-    
-    // Try initialization with retries
-    int retryCount = 0;
-    const int maxRetries = 3;
-    
-    while (retryCount < maxRetries) {
-        if (primeSensor(pox, rawSensor, true)) {
-            pox.setOnBeatDetectedCallback(onBeatDetected);
-            poxInitialized = true;
-            Serial.println("✅ SUCCESS");
-            checkMemory("After pulse oximeter init");
-            return true;
-        }
-        
-        Serial.print("Retry ");
-        Serial.println(retryCount + 1);
-        delay(100);
-        resetSensors();
-        retryCount++;
+    if (!pox->begin()) {
+        Serial.println("FAILED");
+        delete pox;
+        pox = nullptr;
+        return false;
     }
     
-    Serial.println("FAILED after retries");
-    poxInitialized = false;
-    return false;
+    // Set beat detection callback
+    pox->setOnBeatDetectedCallback(onBeatDetected);
+    
+    pox->setIRLedCurrent(MAX30100_LED_CURR_24MA);  // Set to 24mA for optimal HR/SpO2 signal strength
+    Serial.println("✅ SUCCESS");
+    checkMemory("After pulse oximeter init");
+    return true;
 }
 
 bool initializeRawSensor() {
@@ -307,15 +213,20 @@ bool initializeRawSensor() {
         return false;
     }
     
-    resetSensors();
+    cleanupSensors();
+    rawSensor = new MAX30100();
+    
     Serial.print("🔧 Initializing raw sensor... ");
-    if (!primeSensor(pox, rawSensor, false)) {
+    if (!rawSensor->begin()) {
         Serial.println("FAILED");
-        rawSensorInitialized = false;
+        delete rawSensor;
+        rawSensor = nullptr;
         return false;
     }
     
-    rawSensorInitialized = true;
+    rawSensor->setMode(MAX30100_MODE_SPO2_HR);
+    rawSensor->setLedsCurrent(MAX30100_LED_CURR_50MA, MAX30100_LED_CURR_50MA);
+    rawSensor->setHighresModeEnabled(true);
     Serial.println("✅ SUCCESS");
     checkMemory("After raw sensor init");
     return true;
@@ -331,31 +242,31 @@ void initializeAccelerometer() {
 // MODE SWITCHING AND CONTROL
 // ==================================================
 
-void handleControlCommand(const char* command) {
-    Serial.printf("📨 Command received: %s\n", command);
+void handleControlCommand(String command) {
+    Serial.println("📨 Command received: " + command);
     
-    if (strncmp(command, "MODE:", 5) == 0) {
-        switchMode(command + 5);
+    if (command.startsWith("MODE:")) {
+        String mode = command.substring(5);
+        switchMode(mode);
     }
-    else if (strncmp(command, "LABEL:", 6) == 0) {
+    else if (command.startsWith("LABEL:")) {
+        // Force test label
         if (currentMode == MODE_FORCE_TEST) {
-            strncpy(forceTest.currentLabel, command + 6, sizeof(forceTest.currentLabel) - 1);
-            forceTest.currentLabel[sizeof(forceTest.currentLabel) - 1] = '\0';
+            forceTest.currentLabel = command.substring(6);
             forceTest.isCollecting = true;
             forceTest.collectionStartTime = millis();
-            Serial.printf("🏷️  Force test started with label: %s\n", forceTest.currentLabel);
+            Serial.println("🏷️  Force test started with label: " + forceTest.currentLabel);
         }
     }
-    else if (strncmp(command, "START:", 6) == 0) {
+    else if (command.startsWith("START:")) {
+        // Distance test start
         if (currentMode == MODE_DISTANCE_TEST) {
-            const char* colon = strchr(command + 6, ':');
-            if (colon) {
-                strncpy(distanceTest.currentLED, command + 6, colon - (command + 6));
-                distanceTest.currentLED[colon - (command + 6)] = '\0';
-                distanceTest.currentDistance = atoi(colon + 1);
+            int colonIndex = command.indexOf(':', 6);
+            if (colonIndex > 0) {
+                distanceTest.currentLED = command.substring(6, colonIndex);
+                distanceTest.currentDistance = command.substring(colonIndex + 1).toInt();
             } else {
-                strncpy(distanceTest.currentLED, command + 6, sizeof(distanceTest.currentLED) - 1);
-                distanceTest.currentLED[sizeof(distanceTest.currentLED) - 1] = '\0';
+                distanceTest.currentLED = command.substring(6);
                 distanceTest.currentDistance = 0;
             }
             distanceTest.collectingData = true;
@@ -363,102 +274,90 @@ void handleControlCommand(const char* command) {
             distanceTest.irSum = 0;
             distanceTest.redSum = 0;
             Serial.printf("📏 Distance test started: %s at %dmm\n", 
-                         distanceTest.currentLED, distanceTest.currentDistance);
+                         distanceTest.currentLED.c_str(), distanceTest.currentDistance);
         }
     }
-    else if (strcmp(command, "STOP") == 0) {
+    else if (command == "STOP") {
         if (currentMode == MODE_FORCE_TEST) {
             forceTest.isCollecting = false;
-            strncpy(forceTest.currentLabel, "waiting", sizeof(forceTest.currentLabel));
+            forceTest.currentLabel = "waiting";
         } else if (currentMode == MODE_DISTANCE_TEST) {
             distanceTest.collectingData = false;
         }
         Serial.println("⏹️  Collection stopped");
     }
-    else if (strcmp(command, "RESET") == 0) {
-        resetSensors();
+    else if (command == "RESET") {
+        if (rawSensor != nullptr) {
+            rawSensor->resetFifo();
+            Serial.println("🔄 FIFO reset");
+        }
     }
-    else if (strcmp(command, "STATUS") == 0) {
+    else if (command == "STATUS") {
         sendStatus();
     }
     
     sendStatus();
 }
 
-void switchMode(const char* modeName) {
+void switchMode(String modeName) {
     OperatingMode newMode = MODE_IDLE;
-    uint32_t newReportingPeriod = 500;  // Default to 2Hz (500ms) for all modes
+    uint32_t newReportingPeriod = 1000;
     
-    if (strcmp(modeName, "HR_SPO2") == 0) {
+    if (modeName == "HR_SPO2") {
         newMode = MODE_HR_SPO2;
         newReportingPeriod = 500;
-    } else if (strcmp(modeName, "TEMPERATURE") == 0) {
+    } else if (modeName == "TEMPERATURE") {
         newMode = MODE_TEMPERATURE;
-        newReportingPeriod = 500;  // Changed from 2000ms to 500ms for 2Hz
-    } else if (strcmp(modeName, "FORCE_TEST") == 0) {
+        newReportingPeriod = 2000;
+    } else if (modeName == "FORCE_TEST") {
         newMode = MODE_FORCE_TEST;
-        newReportingPeriod = 500;  // Changed from 100ms to 500ms for 2Hz
-    } else if (strcmp(modeName, "DISTANCE_TEST") == 0) {
+        newReportingPeriod = 100;
+    } else if (modeName == "DISTANCE_TEST") {
         newMode = MODE_DISTANCE_TEST;
-        newReportingPeriod = 500;  // Changed from 100ms to 500ms for 2Hz
-    } else if (strcmp(modeName, "QUALITY") == 0) {
+        newReportingPeriod = 100;
+    } else if (modeName == "QUALITY") {
         newMode = MODE_QUALITY;
-        newReportingPeriod = 500;  // Changed from 1000ms to 500ms for 2Hz
-    } else if (strcmp(modeName, "RAW_DATA") == 0) {
+        newReportingPeriod = 1000;
+    } else if (modeName == "RAW_DATA") {
         newMode = MODE_RAW_DATA;
         newReportingPeriod = 500;
-    } else if (strcmp(modeName, "IDLE") == 0) {
+    } else if (modeName == "IDLE") {
         newMode = MODE_IDLE;
-        newReportingPeriod = 500;  // Changed from 2000ms to 500ms for 2Hz
+        newReportingPeriod = 2000;
     }
     
     if (newMode == currentMode) {
-        Serial.printf("⚡ Already in %s mode\n", modeName);
+        Serial.println("⚡ Already in " + modeName + " mode");
         return;
     }
     
-    Serial.printf("🔄 Switching to %s mode\n", modeName);
+    Serial.println("🔄 Switching to " + modeName + " mode");
     currentMode = newMode;
     reportingPeriod = newReportingPeriod;
     tsLastReport = 0;
     
+    // Initialize appropriate sensors for the mode
     bool needsPulseOx = (newMode == MODE_HR_SPO2 || newMode == MODE_QUALITY);
-    bool needsRawSensor = (newMode == MODE_TEMPERATURE || newMode == MODE_FORCE_TEST || 
-                         newMode == MODE_DISTANCE_TEST || newMode == MODE_RAW_DATA);
+    bool needsRawSensor = (newMode == MODE_TEMPERATURE || newMode == MODE_FORCE_TEST || newMode == MODE_DISTANCE_TEST || newMode == MODE_RAW_DATA);
     bool needsAccel = (newMode == MODE_HR_SPO2 || newMode == MODE_QUALITY || newMode == MODE_RAW_DATA);
     
-    if (newMode == MODE_IDLE) {
-        resetSensors();
-    } else {
-        // Always reinitialize the correct sensor type when switching modes
-        // This ensures proper LED settings and configuration
-        if (needsPulseOx) {
-            if (rawSensorInitialized) {
-                // Switching from raw sensor to pulse oximeter
-                Serial.println("🔄 Switching from raw sensor to pulse oximeter");
-                resetSensors(); // Clean reset before switching
-            }
-            initializePulseOximeter();
-        } else if (needsRawSensor) {
-            if (poxInitialized) {
-                // Switching from pulse oximeter to raw sensor  
-                Serial.println("🔄 Switching from pulse oximeter to raw sensor");
-                resetSensors(); // Clean reset before switching
-            }
-            initializeRawSensor();
-        }
-        
-        if (needsAccel) {
-            initializeAccelerometer();
-        }
+    if (needsPulseOx) {
+        initializePulseOximeter();
+    } else if (needsRawSensor) {
+        initializeRawSensor();
     }
     
+    if (needsAccel) {
+        initializeAccelerometer();
+    }
+    
+    // Reset mode-specific variables
     if (newMode == MODE_FORCE_TEST) {
         forceTest.isCollecting = false;
-        strncpy(forceTest.currentLabel, "waiting", sizeof(forceTest.currentLabel));
+        forceTest.currentLabel = "waiting";
     } else if (newMode == MODE_DISTANCE_TEST) {
         distanceTest.collectingData = false;
-        strncpy(distanceTest.currentLED, "none", sizeof(distanceTest.currentLED));
+        distanceTest.currentLED = "none";
         distanceTest.currentDistance = 0;
     } else if (newMode == MODE_TEMPERATURE) {
         temperatureMode.tempSamplingStarted = false;
@@ -477,17 +376,21 @@ void switchMode(const char* modeName) {
 // ==================================================
 
 void readSensorData() {
+    // Always read accelerometer if available
     accel.getAcceleration(&ax, &ay, &az);
     
-    if (poxInitialized && (currentMode == MODE_HR_SPO2 || currentMode == MODE_QUALITY)) {
-        pox.update();
-        float newHeartRate = pox.getHeartRate();
-        float newSpO2 = pox.getSpO2();
+    // Read appropriate sensor based on mode
+    if (pox != nullptr && (currentMode == MODE_HR_SPO2 || currentMode == MODE_QUALITY)) {
+        pox->update();
+        float newHeartRate = pox->getHeartRate();
+        float newSpO2 = pox->getSpO2();
         
+        // Debug output every 5 seconds when values change significantly
         static uint32_t lastDebugOutput = 0;
         if (millis() - lastDebugOutput > 5000 || 
             abs(newHeartRate - heartRate) > 5 || 
             abs(newSpO2 - spO2) > 2) {
+            
             Serial.printf("🔍 HR: %.1f -> %.1f, SpO2: %.1f -> %.1f\n", 
                          heartRate, newHeartRate, spO2, newSpO2);
             lastDebugOutput = millis();
@@ -497,26 +400,28 @@ void readSensorData() {
         spO2 = newSpO2;
     }
     
-    if (rawSensorInitialized) {
-        rawSensor.update();
-        rawSensor.getRawValues(&irValue, &redValue);
+    if (rawSensor != nullptr) {
+        rawSensor->update();
+        rawSensor->getRawValues(&irValue, &redValue);
         
+        // Temperature reading for temperature mode
         if (currentMode == MODE_TEMPERATURE) {
             if (millis() - temperatureMode.tsLastTempSample > temperatureMode.tempSamplingPeriod) {
                 if (!temperatureMode.tempSamplingStarted) {
-                    rawSensor.startTemperatureSampling();
+                    rawSensor->startTemperatureSampling();
                     temperatureMode.tempSamplingStarted = true;
                     temperatureMode.tsLastTempSample = millis();
                 }
             }
             
-            if (temperatureMode.tempSamplingStarted && rawSensor.isTemperatureReady()) {
-                temperature = rawSensor.retrieveTemperature();
+            if (temperatureMode.tempSamplingStarted && rawSensor->isTemperatureReady()) {
+                temperature = rawSensor->retrieveTemperature();
                 temperatureMode.tempSamplingStarted = false;
             }
         }
     }
     
+    // Read FSR for force test mode
     if (currentMode == MODE_FORCE_TEST) {
         fsrValue = analogRead(FSR_PIN);
     }
@@ -532,11 +437,12 @@ int assessDataQuality() {
         qualityMode.previousHeartRate = heartRate;
         qualityMode.previousSpO2 = spO2;
         qualityMode.previousAccelMag = sqrt(ax*ax + ay*ay + az*az);
-        return 1;
+        return 1; // Good quality for first sample
     }
     
     float currentAccelMag = sqrt(ax*ax + ay*ay + az*az);
     
+    // Use the embedded ML model
     int quality = assess_sensor_quality(
         heartRate, spO2, ax, ay, az,
         abs(heartRate - qualityMode.previousHeartRate),
@@ -544,6 +450,7 @@ int assessDataQuality() {
         qualityMode.previousAccelMag
     );
     
+    // Update previous values
     qualityMode.previousHeartRate = heartRate;
     qualityMode.previousSpO2 = spO2;
     qualityMode.previousAccelMag = currentAccelMag;
@@ -558,7 +465,7 @@ int assessDataQuality() {
 void sendData() {
     if (!clientConnected) return;
     
-    char buffer[300];
+    char buffer[250];  // Reduced from 300
     uint32_t timestamp = millis();
     
     switch (currentMode) {
@@ -578,9 +485,10 @@ void sendData() {
             
         case MODE_FORCE_TEST:
             if (forceTest.isCollecting) {
+                // Check if collection time is up
                 if (millis() - forceTest.collectionStartTime >= forceTest.collectionDuration) {
                     forceTest.isCollecting = false;
-                    strncpy(forceTest.currentLabel, "waiting", sizeof(forceTest.currentLabel));
+                    forceTest.currentLabel = "waiting";
                     Serial.println("🏁 Force collection finished");
                     return;
                 }
@@ -588,7 +496,7 @@ void sendData() {
             
             snprintf(buffer, sizeof(buffer),
                 "{\"ir\":%u,\"red\":%u,\"fsr\":%u,\"label\":\"%s\",\"collecting\":%s,\"timestamp\":%lu}",
-                irValue, redValue, fsrValue, forceTest.currentLabel, 
+                irValue, redValue, fsrValue, forceTest.currentLabel.c_str(), 
                 forceTest.isCollecting ? "true" : "false", timestamp
             );
             break;
@@ -605,13 +513,13 @@ void sendData() {
                     
                     snprintf(buffer, sizeof(buffer),
                         "{\"type\":\"average\",\"led\":\"%s\",\"distance_mm\":%d,\"avg_ir\":%.2f,\"avg_red\":%.2f,\"samples\":%u,\"timestamp\":%lu}",
-                        distanceTest.currentLED, distanceTest.currentDistance, avgIR, avgRed, distanceTest.sampleCount, timestamp
+                        distanceTest.currentLED.c_str(), distanceTest.currentDistance, avgIR, avgRed, distanceTest.sampleCount, timestamp
                     );
                 }
             } else {
                 snprintf(buffer, sizeof(buffer),
                     "{\"ir\":%u,\"red\":%u,\"led\":\"%s\",\"distance_mm\":%d,\"collecting\":%s,\"timestamp\":%lu}",
-                    irValue, redValue, distanceTest.currentLED, distanceTest.currentDistance, 
+                    irValue, redValue, distanceTest.currentLED.c_str(), distanceTest.currentDistance, 
                     distanceTest.collectingData ? "true" : "false", timestamp
                 );
             }
@@ -663,18 +571,21 @@ void setup_ble() {
     
     bleService = bleServer->createService(serviceUUID);
 
+    // Data characteristic (for sensor readings)
     dataChar = bleService->createCharacteristic(
         dataCharUUID,
         BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ
     );
     dataChar->addDescriptor(new BLE2902());
 
+    // Control characteristic (for commands)
     controlChar = bleService->createCharacteristic(
         controlCharUUID,
         BLECharacteristic::PROPERTY_WRITE
     );
     controlChar->setCallbacks(new ControlCallbacks());
 
+    // Status characteristic (for system status)
     statusChar = bleService->createCharacteristic(
         statusCharUUID,
         BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ
@@ -714,17 +625,18 @@ void setup() {
     Serial.println("  MODE:IDLE         - Idle mode");
     Serial.println("==================================================");
     
-    esp_wifi_stop(); // Disable Wi-Fi to save power
-    
     Wire.begin();
-    Wire.setClock(100000);  // Use 100kHz I2C speed for better stability
+    Wire.setClock(100000);  // Changed from 400000 to match library code
     
+    // Initialize FSR pin
     pinMode(FSR_PIN, INPUT);
     
+    // Initialize accelerometer (always available)
     initializeAccelerometer();
     
     Serial.printf("💾 After accel init - Free heap: %u bytes\n", ESP.getFreeHeap());
     
+    // Setup BLE
     setup_ble();
     
     Serial.printf("💾 After BLE init - Free heap: %u bytes\n", ESP.getFreeHeap());
@@ -733,16 +645,21 @@ void setup() {
 }
 
 void loop() {
+    // Monitor memory usage periodically
     static uint32_t lastMemoryCheck = 0;
-    if (millis() - lastMemoryCheck > 10000) {
+    if (millis() - lastMemoryCheck > 10000) { // Every 10 seconds
         Serial.printf("💾 Free heap: %u bytes\n", ESP.getFreeHeap());
         lastMemoryCheck = millis();
     }
     
+    // Always read sensor data
     readSensorData();
     
+    // Send data at appropriate intervals
     if (millis() - tsLastReport >= reportingPeriod) {
         sendData();
         tsLastReport = millis();
     }
+    
+    // Small delay to prevent overwhelming the system
 }

@@ -1,0 +1,8 @@
+# Lightweight Dashboard Requirements
+# Much lighter than matplotlib + tkinter combo
+
+flask==2.3.3
+flask-socketio==5.3.6
+bleak==0.21.1
+python-socketio[client]==5.8.0
+eventlet==0.33.3

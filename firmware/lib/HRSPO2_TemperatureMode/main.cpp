@@ -12,7 +12,7 @@
   #include <BLE2902.h>
   #include "MAX30100.h"
 
-  #define REPORTING_PERIOD_MS 2000
+  #define REPORTING_PERIOD_MS 500   // 2Hz reporting for consistency
   #define TEMP_SAMPLING_PERIOD_MS 1000
 
   MAX30100 sensor;
@@ -35,7 +35,7 @@
     } else {
       Serial.println("SUCCESS");
     }
-    sensor.setLedsCurrent(MAX30100_LED_CURR_7_6MA, MAX30100_LED_CURR_50MA);
+    sensor.setLedsCurrent(MAX30100_LED_CURR_24MA, MAX30100_LED_CURR_24MA);  // Set both IR and Red to 24mA
   }
 
   void setup_ble() {
@@ -97,12 +97,10 @@
       Serial.println("FAILED");
       while (1);
     } else {
-      Serial.println("SUCCESS");
+        Serial.println("SUCCESS");
     }
-    pox.setIRLedCurrent(MAX30100_LED_CURR_7_6MA);
-  }
-
-  void setup_accel() {
+    pox.setIRLedCurrent(MAX30100_LED_CURR_24MA);  // Set to 24mA for optimal HR/SpO2 signal strength
+  }  void setup_accel() {
     accel.begin();
   }
 
@@ -145,12 +143,12 @@ void setup() {
   Wire.begin();
   
 #if USE_TEMPERATURE_MODE
-  Wire.setClock(400000);
+  Wire.setClock(400000);  // Use 400kHz I2C speed for better performance, consistent across all files
   setup_ble();
   setup_sensor();
   Serial.println("System ready - Temperature monitoring started");
 #else
-  Wire.setClock(100000);
+  Wire.setClock(400000);  // Use 400kHz I2C speed for better performance, consistent across all files
   setup_ble();
   setup_oximeter();
   setup_accel();

@@ -80,7 +80,7 @@
           } else if (value == "RECALIBRATE") {
               // Trigger sensor recalibration
               Serial.println("🔧 Recalibrating sensors...");
-              pox.setIRLedCurrent(MAX30100_LED_CURR_7_6MA);
+              pox.setIRLedCurrent(MAX30100_LED_CURR_24MA);  // Set to 24mA for optimal signal strength
           }
       }
   };
@@ -93,7 +93,7 @@
       } else {
           Serial.println("✅ SUCCESS");
       }
-      pox.setIRLedCurrent(MAX30100_LED_CURR_7_6MA);
+      pox.setIRLedCurrent(MAX30100_LED_CURR_24MA);  // Set to 24mA for optimal signal strength
   }
   
   void setup_accel() {
@@ -264,7 +264,7 @@
       } else {
           Serial.println("SUCCESS");
       }
-      pox.setIRLedCurrent(MAX30100_LED_CURR_7_6MA);
+      pox.setIRLedCurrent(MAX30100_LED_CURR_24MA);  // Set to 24mA for optimal signal strength
   }
   
   void setup_accel() {

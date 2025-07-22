@@ -6,7 +6,7 @@
 #include <BLE2902.h>
 #include "MAX30100.h"
 
-#define REPORTING_PERIOD_MS 2000  // Temperature readings every 2 seconds
+#define REPORTING_PERIOD_MS 500   // 2Hz reporting for consistency across all files
 #define TEMP_SAMPLING_PERIOD_MS 1000  // Start temperature sampling every 1 second
 
 MAX30100 sensor;
@@ -34,7 +34,7 @@ void setup_sensor() {
   
   // Configure sensor with same settings as original code
   // IR LED current as specified in original code, Red LED current as default
-  sensor.setLedsCurrent(MAX30100_LED_CURR_7_6MA, MAX30100_LED_CURR_50MA);
+  sensor.setLedsCurrent(MAX30100_LED_CURR_24MA, MAX30100_LED_CURR_24MA);  // Set both IR and Red to 24mA
 }
 
 void setup_ble() {
